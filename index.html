@@ -82,7 +82,7 @@
     if (sessionStorage.getItem('auth') === '1') document.getElementById('gate').style.display = 'none';
     document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
     function check() {
-      if (document.getElementById('pw').value === 'letmesee') {
+      if (document.getElementById('pw').value === 'noemi') {
         sessionStorage.setItem('auth', '1');
         document.getElementById('gate').style.display = 'none';
       } else {

@@ -52,6 +52,12 @@
 
     #gate button:hover { background: #3a8fc4; }
 
+    #gate .hint {
+      color: rgba(255,255,255,0.35);
+      font-size: 12px;
+      font-family: sans-serif;
+    }
+
     #gate .error {
       color: #ff7b7b;
       font-size: 13px;
@@ -75,6 +81,7 @@
   <div id="gate">
     <input id="pw" type="password" placeholder="Password" autofocus/>
     <button onclick="check()">Enter</button>
+    <span class="hint">Hint: the name of your favourite designer</span>
     <span class="error" id="err">Incorrect password</span>
   </div>
 

@@ -8,16 +8,60 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: linear-gradient(180deg, #0d1b2a 0%, #1a2f4a 60%, #0f3460 100%);
       overflow: hidden;
       height: 100vh;
       width: 100vw;
+      transition: background 1.2s ease;
     }
 
-    canvas {
-      display: block;
+    body.rain {
+      background: linear-gradient(180deg, #0d1b2a 0%, #1a2f4a 60%, #0f3460 100%);
     }
 
+    body.sun {
+      background: linear-gradient(180deg, #ff9a3c 0%, #ffc97a 40%, #ffe4b0 100%);
+    }
+
+    canvas { display: block; }
+
+    /* Toggle */
+    #toggle {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+      padding: 5px;
+      gap: 4px;
+      z-index: 20;
+    }
+
+    #toggle button {
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      font-size: 13px;
+      font-family: sans-serif;
+      font-weight: 500;
+      padding: 8px 22px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #toggle button.active {
+      background: rgba(255,255,255,0.22);
+      color: #fff;
+    }
+
+    /* Password gate */
     #gate {
       position: fixed;
       inset: 0;
@@ -27,7 +71,7 @@
       justify-content: center;
       align-items: center;
       gap: 12px;
-      z-index: 10;
+      z-index: 30;
     }
 
     #gate input {
@@ -70,7 +114,7 @@
     }
   </style>
 </head>
-<body>
+<body class="rain">
   <div id="gate">
     <input id="pw" type="password" placeholder="Password" autofocus/>
     <button onclick="check()">Enter</button>
@@ -78,10 +122,15 @@
     <span class="error" id="err">Incorrect password</span>
   </div>
 
-  <canvas id="rain"></canvas>
+  <canvas id="canvas"></canvas>
+
+  <div id="toggle">
+    <button id="btn-rain" class="active" onclick="setMode('rain')">🌧 Rain</button>
+    <button id="btn-sun"  onclick="setMode('sun')">☀️ Sunshine</button>
+  </div>
 
   <script>
-    // Password gate
+    // --- Password gate ---
     if (sessionStorage.getItem('auth') === '1') document.getElementById('gate').style.display = 'none';
     document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
     function check() {
@@ -93,21 +142,32 @@
       }
     }
 
-    // Rain animation
-    const canvas = document.getElementById('rain');
+    // --- Canvas setup ---
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
     function resize() {
-      canvas.width = window.innerWidth;
+      canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
     }
     resize();
     window.addEventListener('resize', resize);
 
+    // --- Mode ---
+    let mode = 'rain';
+
+    function setMode(m) {
+      mode = m;
+      document.body.className = m;
+      document.getElementById('btn-rain').classList.toggle('active', m === 'rain');
+      document.getElementById('btn-sun').classList.toggle('active',  m === 'sun');
+    }
+
+    // --- Rain ---
     const DROP_COUNT = 120;
 
     function randomDrop() {
-      const size = Math.random() * 10 + 6; // 6–16px tall
+      const size = Math.random() * 10 + 6;
       return {
         x: Math.random() * window.innerWidth,
         y: Math.random() * window.innerHeight - window.innerHeight,
@@ -115,7 +175,7 @@
         h: size,
         speed: Math.random() * 4 + 3,
         opacity: Math.random() * 0.5 + 0.3,
-        wobble: Math.random() * 0.8 - 0.4, // slight horizontal drift
+        wobble: Math.random() * 0.8 - 0.4,
       };
     }
 
@@ -124,53 +184,95 @@
     function drawDrop(d) {
       ctx.save();
       ctx.translate(d.x, d.y);
-
-      // Raindrop path: pointed top, rounded bottom
       ctx.beginPath();
-      ctx.moveTo(0, -d.h / 2);                          // tip
-      ctx.bezierCurveTo(
-        d.w,  -d.h * 0.1,
-        d.w,   d.h * 0.4,
-        0,     d.h / 2
-      );
-      ctx.bezierCurveTo(
-        -d.w,  d.h * 0.4,
-        -d.w, -d.h * 0.1,
-        0,    -d.h / 2
-      );
+      ctx.moveTo(0, -d.h / 2);
+      ctx.bezierCurveTo( d.w, -d.h * 0.1,  d.w,  d.h * 0.4, 0,  d.h / 2);
+      ctx.bezierCurveTo(-d.w,  d.h * 0.4, -d.w, -d.h * 0.1, 0, -d.h / 2);
       ctx.closePath();
 
       const grad = ctx.createLinearGradient(0, -d.h / 2, 0, d.h / 2);
       grad.addColorStop(0,   `rgba(168, 216, 255, ${d.opacity})`);
-      grad.addColorStop(0.6, `rgba(74, 159, 212, ${d.opacity})`);
-      grad.addColorStop(1,   `rgba(26, 95, 138, ${d.opacity})`);
-
+      grad.addColorStop(0.6, `rgba(74, 159, 212,  ${d.opacity})`);
+      grad.addColorStop(1,   `rgba(26, 95, 138,   ${d.opacity})`);
       ctx.fillStyle = grad;
       ctx.fill();
 
-      // Tiny shine
       ctx.beginPath();
       ctx.ellipse(-d.w * 0.25, -d.h * 0.15, d.w * 0.18, d.h * 0.22, -0.4, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(255,255,255,${d.opacity * 0.6})`;
       ctx.fill();
-
       ctx.restore();
     }
 
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    function updateRain() {
       for (const d of drops) {
         drawDrop(d);
         d.y += d.speed;
         d.x += d.wobble;
-
         if (d.y - d.h > canvas.height) {
           Object.assign(d, randomDrop());
           d.y = -d.h;
         }
       }
+    }
 
+    // --- Sunshine ---
+    const BEAM_COUNT = 10;
+    let sunAngle = 0;
+
+    function drawSunshine() {
+      const cx = canvas.width  * 0.5;
+      const cy = canvas.height * 0.01; // sun sits just above top edge
+      const maxLen = Math.sqrt(canvas.width ** 2 + canvas.height ** 2);
+
+      sunAngle += 0.0015;
+
+      // Rotating light beams
+      for (let i = 0; i < BEAM_COUNT; i++) {
+        const base  = (Math.PI / BEAM_COUNT) * i + sunAngle;
+        const halfW = 0.055; // beam half-width in radians
+
+        const x1 = cx + Math.cos(base - halfW) * 80;
+        const y1 = cy + Math.sin(base - halfW) * 80;
+        const x2 = cx + Math.cos(base + halfW) * 80;
+        const y2 = cy + Math.sin(base + halfW) * 80;
+        const x3 = cx + Math.cos(base + halfW) * maxLen;
+        const y3 = cy + Math.sin(base + halfW) * maxLen;
+        const x4 = cx + Math.cos(base - halfW) * maxLen;
+        const y4 = cy + Math.sin(base - halfW) * maxLen;
+
+        const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(base) * maxLen, cy + Math.sin(base) * maxLen);
+        grad.addColorStop(0,   'rgba(255, 220, 100, 0.55)');
+        grad.addColorStop(0.4, 'rgba(255, 170,  60, 0.18)');
+        grad.addColorStop(1,   'rgba(255, 140,  30, 0.0)');
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.lineTo(x3, y3);
+        ctx.lineTo(x4, y4);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+
+      // Sun glow core
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 160);
+      glow.addColorStop(0,   'rgba(255, 240, 180, 0.95)');
+      glow.addColorStop(0.3, 'rgba(255, 200,  80, 0.6)');
+      glow.addColorStop(0.7, 'rgba(255, 150,  40, 0.2)');
+      glow.addColorStop(1,   'rgba(255, 120,  20, 0.0)');
+      ctx.beginPath();
+      ctx.arc(cx, cy, 160, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+    }
+
+    // --- Animation loop ---
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (mode === 'rain') updateRain();
+      else                 drawSunshine();
       requestAnimationFrame(animate);
     }
 

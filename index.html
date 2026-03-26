@@ -14,6 +14,51 @@
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     }
 
+    #gate {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+    }
+
+    #gate input {
+      padding: 10px 16px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.07);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      text-align: center;
+      letter-spacing: 2px;
+    }
+
+    #gate input::placeholder { color: rgba(255,255,255,0.35); letter-spacing: normal; }
+
+    #gate button {
+      padding: 9px 28px;
+      border: none;
+      border-radius: 8px;
+      background: #4a9fd4;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    #gate button:hover { background: #3a8fc4; }
+
+    #gate .error {
+      color: #ff7b7b;
+      font-size: 13px;
+      font-family: sans-serif;
+      display: none;
+    }
+
     .raindrop {
       animation: fall 2s ease-in-out infinite;
       filter: drop-shadow(0 0 18px rgba(100, 180, 255, 0.6));
@@ -27,6 +72,25 @@
   </style>
 </head>
 <body>
+  <div id="gate">
+    <input id="pw" type="password" placeholder="Password" autofocus/>
+    <button onclick="check()">Enter</button>
+    <span class="error" id="err">Incorrect password</span>
+  </div>
+
+  <script>
+    if (sessionStorage.getItem('auth') === '1') document.getElementById('gate').style.display = 'none';
+    document.getElementById('pw').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+    function check() {
+      if (document.getElementById('pw').value === 'letmesee') {
+        sessionStorage.setItem('auth', '1');
+        document.getElementById('gate').style.display = 'none';
+      } else {
+        document.getElementById('err').style.display = 'block';
+      }
+    }
+  </script>
+
   <svg class="raindrop" width="120" height="160" viewBox="0 0 120 160" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="dropGradient" x1="30%" y1="10%" x2="80%" y2="90%">
